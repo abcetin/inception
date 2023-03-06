@@ -1,0 +1,73 @@
+version : '3'
+
+volumes:
+  WordPress:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/home/acetin/data/wordpress'
+  DB:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/home/acetin/data/db'
+
+networks:
+  inception:
+    driver: bridge
+
+services:
+
+  nginx:
+    env_file: .env
+    container_name: nginx
+    build:
+      context: ./requirements/nginx
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - WordPress:/var/www/html:delegated
+    networks:
+      - inception
+    depends_on:
+      - wordpress
+    tty: true
+
+  mariadb:
+    env_file: .env
+    container_name: mariadb
+    restart: always
+    build:
+      context: ./requirements/mariadb
+      dockerfile: Dockerfile
+    networks:
+      - inception
+    tty: true
+    ports:
+      - "3306:3306"
+    volumes:
+      - DB:/var/lib/mysql:delegated
+
+  wordpress:
+    env_file: .env
+    container_name: wordpress
+    build:
+      context: ./requirements/wordpress
+      dockerfile : Dockerfile
+    restart: always
+    volumes:
+     - WordPress:/var/www/html:delegated
+    networks:
+      - inception
+    tty: true
+    ports:
+      - "9000:9000"
+    depends_on:
+       - mariadb
+
+
